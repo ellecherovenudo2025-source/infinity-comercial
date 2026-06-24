@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infinity — Seguimiento Comercial</title>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161820;
+    --surface2: #1e2028;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0f1f5;
+    --muted: #7c7f8e;
+    --green: #00e096;
+    --green-bg: rgba(0,224,150,0.08);
+    --amber: #ffb547;
+    --amber-bg: rgba(255,181,71,0.08);
+    --red: #ff4d6a;
+    --red-bg: rgba(255,77,106,0.08);
+    --blue: #4d9eff;
+    --blue-bg: rgba(77,158,255,0.08);
+    --radius: 10px;
+    --radius-lg: 16px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono: 'SF Mono', 'Fira Code', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, #4d9eff 0%, #00e096 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: #000; letter-spacing: -0.5px;
+  }
+  .header h1 { font-size: 15px; font-weight: 600; }
+  .header-sub { font-size: 12px; color: var(--muted); }
+  .sync-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    color: var(--text); border-radius: 8px;
+    padding: 7px 14px; cursor: pointer; font-size: 13px;
+    transition: all 0.15s;
+  }
+  .sync-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .sync-btn svg { width: 14px; height: 14px; }
+  .spin { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* METRICS */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 20px 24px 0;
+  }
+  .metric {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    display: flex; align-items: center; gap: 14px;
+    transition: border-color 0.15s;
+  }
+  .metric:hover { border-color: var(--border2); }
+  .metric-dot {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .metric-dot.g { background: var(--green-bg); color: var(--green); }
+  .metric-dot.a { background: var(--amber-bg); color: var(--amber); }
+  .metric-dot.r { background: var(--red-bg); color: var(--red); }
+  .metric-dot.b { background: var(--blue-bg); color: var(--blue); }
+  .metric-label { font-size: 11px; color: var(--muted); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .metric-value { font-size: 26px; font-weight: 600; line-height: 1; }
+  .metric-value.g { color: var(--green); }
+  .metric-value.a { color: var(--amber); }
+  .metric-value.r { color: var(--red); }
+  .metric-value.b { color: var(--blue); }
+
+  /* CONTROLS */
+  .controls {
+    display: flex; align-items: center; gap: 10px;
+    padding: 16px 24px;
+    flex-wrap: wrap;
+  }
+  .tab-group { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 3px; }
+  .tab {
+    padding: 6px 14px; border-radius: 7px; cursor: pointer;
+    font-size: 12px; font-weight: 500; transition: all 0.15s; border: none;
+    background: transparent; color: var(--muted);
+  }
+  .tab.active { background: var(--surface2); color: var(--text); }
+  .tab.active.g { color: var(--green); }
+  .tab.active.a { color: var(--amber); }
+  .tab.active.r { color: var(--red); }
+
+  .search {
+    flex: 1; min-width: 200px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 12px 7px 34px;
+    color: var(--text); font-size: 13px; outline: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%237c7f8e' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: 10px center;
+    transition: border-color 0.15s;
+  }
+  .search:focus { border-color: var(--blue); }
+  .search::placeholder { color: var(--muted); }
+
+  .sort-select {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); border-radius: 8px; padding: 7px 10px;
+    font-size: 12px; outline: none; cursor: pointer;
+  }
+
+  /* TABLE */
+  .table-wrap {
+    margin: 0 24px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 10px 14px; text-align: left;
+    font-size: 11px; font-weight: 500; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+    cursor: pointer; user-select: none; white-space: nowrap;
+  }
+  thead th:hover { color: var(--text); }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  td { padding: 10px 14px; vertical-align: middle; }
+
+  .client-name { font-weight: 500; font-size: 13px; }
+  .client-ops { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 99px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .badge.g { background: var(--green-bg); color: var(--green); border: 1px solid rgba(0,224,150,0.2); }
+  .badge.a { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(255,181,71,0.2); }
+  .badge.r { background: var(--red-bg); color: var(--red); border: 1px solid rgba(255,77,106,0.2); }
+  .badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  .days-cell { display: flex; align-items: center; gap: 10px; }
+  .days-num { font-weight: 600; min-width: 34px; font-size: 13px; }
+  .bar-track { flex: 1; height: 3px; background: var(--border); border-radius: 2px; min-width: 50px; }
+  .bar-fill { height: 100%; border-radius: 2px; }
+
+  .monto { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+  .freq-tag {
+    font-size: 11px; color: var(--muted);
+    background: var(--surface2);
+    padding: 2px 8px; border-radius: 99px;
+    white-space: nowrap;
+  }
+
+  /* PAGINATION */
+  .pagination {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
+    font-size: 12px; color: var(--muted);
+  }
+  .page-btns { display: flex; gap: 6px; }
+  .page-btn {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); border-radius: 6px; padding: 4px 10px;
+    cursor: pointer; font-size: 12px; transition: all 0.1s;
+  }
+  .page-btn:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); }
+  .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* ESTADO CARGA */
+  .state-box {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px;
+    padding: 60px 24px; color: var(--muted); font-size: 13px;
+  }
+  .state-icon { font-size: 32px; }
+  .state-title { font-size: 15px; font-weight: 500; color: var(--text); }
+
+  /* AI CHAT */
+  .ai-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex; gap: 10px; align-items: center;
+    z-index: 200;
+  }
+  .ai-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px;
+    color: var(--text); font-size: 13px; outline: none;
+    font-family: var(--font); transition: border-color 0.15s;
+  }
+  .ai-input:focus { border-color: var(--blue); }
+  .ai-input::placeholder { color: var(--muted); }
+  .ai-send {
+    background: var(--blue); border: none; border-radius: 10px;
+    color: #000; padding: 10px 18px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
+  }
+  .ai-send:hover { opacity: 0.85; }
+  .ai-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .ai-response {
+    margin: 0 24px 8px;
+    background: var(--blue-bg);
+    border: 1px solid rgba(77,158,255,0.15);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 13px; line-height: 1.6;
+    display: none;
+  }
+  .ai-response.visible { display: block; }
+  .ai-response-label {
+    font-size: 10px; font-weight: 600; color: var(--blue);
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;
+  }
+
+  /* Espacio para el ai-bar */
+  .bottom-spacer { height: 70px; }
+
+  @media (max-width: 768px) {
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .controls { flex-direction: column; align-items: stretch; }
+    .tab-group { justify-content: center; }
+    .days-num { min-width: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">∞</div>
+    <div>
+      <h1>Seguimiento Comercial</h1>
+      <div class="header-sub" id="last-sync">Cargando datos...</div>
+    </div>
+  </div>
+  <button class="sync-btn" onclick="cargarDatos()" id="sync-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="sync-icon">
+      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
+    </svg>
+    Sincronizar
+  </button>
+</div>
+
+<div class="metrics">
+  <div class="metric"><div class="metric-dot b">∞</div><div><div class="metric-label">Total clientes</div><div class="metric-value b" id="m-total">—</div></div></div>
+  <div class="metric"><div class="metric-dot g">●</div><div><div class="metric-label">Activos (≤25 días)</div><div class="metric-value g" id="m-activos">—</div></div></div>
+  <div class="metric"><div class="metric-dot a">●</div><div><div class="metric-label">Por operar (26–40 días)</div><div class="metric-value a" id="m-proximos">—</div></div></div>
+  <div class="metric"><div class="metric-dot r">●</div><div><div class="metric-label">Inactivos (+40 días)</div><div class="metric-value r" id="m-inactivos">—</div></div></div>
+</div>
+
+<div class="controls">
+  <div class="tab-group">
+    <button class="tab active" onclick="setFiltro('todos', this)">Todos</button>
+    <button class="tab active g" onclick="setFiltro('activo', this)">🟢 Activos</button>
+    <button class="tab active a" onclick="setFiltro('proximos', this)">🟡 Por operar</button>
+    <button class="tab active r" onclick="setFiltro('inactivos', this)">🔴 Inactivos</button>
+  </div>
+  <input class="search" type="text" placeholder="Buscar cliente..." oninput="setBusqueda(this.value)" id="search-input">
+  <select class="sort-select" onchange="setSort(this.value)">
+    <option value="dias-asc">Días ↑</option>
+    <option value="dias-desc">Días ↓</option>
+    <option value="nombre-asc">Nombre A–Z</option>
+    <option value="ops-desc">Más operaciones</option>
+    <option value="monto-desc">Mayor monto</option>
+  </select>
+</div>
+
+<div id="ai-response" class="ai-response">
+  <div class="ai-response-label">✦ Análisis IA</div>
+  <div id="ai-text"></div>
+</div>
+
+<div class="table-wrap" id="table-wrap">
+  <div class="state-box" id="estado-carga">
+    <div class="state-icon">⟳</div>
+    <div class="state-title">Conectando con monday.com...</div>
+    <div>Esto puede tardar unos segundos la primera vez.</div>
+  </div>
+</div>
+
+<div class="bottom-spacer"></div>
+
+<div class="ai-bar">
+  <input class="ai-input" type="text" id="ai-input" placeholder="Preguntá algo... ¿Quién no operó este mes? ¿Cuál es el cliente más frecuente?" onkeydown="if(event.key==='Enter') enviarConsulta()">
+  <button class="ai-send" id="ai-send-btn" onclick="enviarConsulta()">Preguntar IA ✦</button>
+</div>
+
+<script>
+const HOY = new Date('2026-06-24');
+const BOARD_ID = '9731281294';
+const DIAS_ACTIVO = 25;
+const DIAS_PROXIMO = 40;
+
+let todosClientes = [];
+let filtro = 'todos';
+let busqueda = '';
+let sortKey = 'dias-asc';
+let pagina = 1;
+const POR_PAG = 30;
+
+function diasDesde(fechaStr) {
+  const f = new Date(fechaStr);
+  return Math.floor((HOY - f) / 86400000);
+}
+
+function estado(dias) {
+  if (dias <= DIAS_ACTIVO) return { label: 'Activo', cls: 'g' };
+  if (dias <= DIAS_PROXIMO) return { label: 'Por operar', cls: 'a' };
+  return { label: 'Inactivo', cls: 'r' };
+}
+
+function barColor(cls) {
+  return cls === 'g' ? '#00e096' : cls === 'a' ? '#ffb547' : '#ff4d6a';
+}
+
+async function cargarDatos() {
+  const btn = document.getElementById('sync-btn');
+  const icon = document.getElementById('sync-icon');
+  btn.disabled = true;
+  icon.classList.add('spin');
+  document.getElementById('last-sync').textContent = 'Sincronizando...';
+  document.getElementById('estado-carga').innerHTML = `
+    <div class="state-icon">⟳</div>
+    <div class="state-title">Cargando operaciones desde monday.com...</div>
+    <div>Procesando todos los clientes e historial</div>
+  `;
+  document.getElementById('table-wrap').innerHTML = '<div class="state-box" id="estado-carga"><div class="state-icon" style="animation:spin 1s linear infinite;display:inline-block">⟳</div><div class="state-title">Cargando...</div></div>';
+
+  try {
+    const data = await fetchMondayBoard();
+    todosClientes = procesarClientes(data);
+    actualizarMetricas();
+    renderTabla();
+    const now = new Date();
+    document.getElementById('last-sync').textContent = `Actualizado hoy a las ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} · ${todosClientes.length} clientes`;
+  } catch (err) {
+    document.getElementById('table-wrap').innerHTML = `
+      <div class="state-box">
+        <div class="state-icon">⚠</div>
+        <div class="state-title">Error al conectar</div>
+        <div>${err.message}</div>
+      </div>`;
+    document.getElementById('last-sync').textContent = 'Error de conexión';
+  } finally {
+    btn.disabled = false;
+    icon.classList.remove('spin');
+  }
+}
+
+async function fetchMondayBoard() {
+  const query = `
+    query {
+      boards(ids: [${BOARD_ID}]) {
+        items_page(limit: 500) {
+          items {
+            id name
+            subitems {
+              id name
+              column_values(ids: ["board_relation_mm2n98gy","date_mm2ndb","numeric_mm2nq09b"]) {
+                id
+                ... on BoardRelationValue { linked_items { name } }
+                ... on DateValue { date }
+                ... on NumbersValue { number }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  const res = await fetch('https://api.monday.com/v1/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query })
+  });
+
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  if (json.errors) throw new Error(json.errors[0].message);
+  return json;
+}
+
+function procesarClientes(data) {
+  const ops = {};
+  const boards = data?.data?.boards || [];
+
+  for (const board of boards) {
+    const items = board?.items_page?.items || [];
+    for (const item of items) {
+      for (const sub of item.subitems || []) {
+        let cliente = null, fecha = null, monto = 0;
+        for (const col of sub.column_values || []) {
+          if (col.id === 'board_relation_mm2n98gy' && col.linked_items?.length) {
+            cliente = col.linked_items[0].name.replace(/ \((IF|FI)\)/gi,'').trim();
+          }
+          if (col.id === 'date_mm2ndb' && col.date) fecha = col.date;
+          if (col.id === 'numeric_mm2nq09b' && col.number) monto = col.number;
+        }
+        if (!cliente || !fecha) continue;
+        if (!ops[cliente]) ops[cliente] = [];
+        ops[cliente].push({ fecha, monto });
+      }
+    }
+  }
+
+  const resultado = [];
+  for (const [nombre, opsList] of Object.entries(ops)) {
+    const sorted = [...opsList].sort((a,b) => b.fecha.localeCompare(a.fecha));
+    const ultima = sorted[0].fecha;
+    const dias = diasDesde(ultima);
+    const totalOps = opsList.length;
+    const ultimoMonto = sorted[0].monto || 0;
+
+    const fechasUnicas = [...new Set(opsList.map(o=>o.fecha))].sort();
+    let freq = null;
+    if (fechasUnicas.length > 1) {
+      const diffs = [];
+      for (let i = 1; i < fechasUnicas.length; i++) {
+        diffs.push((new Date(fechasUnicas[i]) - new Date(fechasUnicas[i-1])) / 86400000);
+      }
+      freq = Math.round(diffs.reduce((a,b)=>a+b,0)/diffs.length);
+    }
+
+    resultado.push({ nombre, ultima, dias, ops: totalOps, monto: ultimoMonto, freq });
+  }
+
+  return resultado.sort((a,b) => a.dias - b.dias);
+}
+
+function actualizarMetricas() {
+  document.getElementById('m-total').textContent = todosClientes.length;
+  document.getElementById('m-activos').textContent = todosClientes.filter(c=>c.dias<=DIAS_ACTIVO).length;
+  document.getElementById('m-proximos').textContent = todosClientes.filter(c=>c.dias>DIAS_ACTIVO&&c.dias<=DIAS_PROXIMO).length;
+  document.getElementById('m-inactivos').textContent = todosClientes.filter(c=>c.dias>DIAS_PROXIMO).length;
+}
+
+function filtrarYOrdenar() {
+  let data = todosClientes.filter(c => {
+    if (busqueda && !c.nombre.toLowerCase().includes(busqueda)) return false;
+    if (filtro === 'activo') return c.dias <= DIAS_ACTIVO;
+    if (filtro === 'proximos') return c.dias > DIAS_ACTIVO && c.dias <= DIAS_PROXIMO;
+    if (filtro === 'inactivos') return c.dias > DIAS_PROXIMO;
+    return true;
+  });
+
+  data.sort((a,b) => {
+    if (sortKey === 'dias-asc') return a.dias - b.dias;
+    if (sortKey === 'dias-desc') return b.dias - a.dias;
+    if (sortKey === 'nombre-asc') return a.nombre.localeCompare(b.nombre);
+    if (sortKey === 'ops-desc') return b.ops - a.ops;
+    if (sortKey === 'monto-desc') return b.monto - a.monto;
+    return 0;
+  });
+
+  return data;
+}
+
+function renderTabla() {
+  const data = filtrarYOrdenar();
+  const total = data.length;
+  const totalPags = Math.max(1, Math.ceil(total / POR_PAG));
+  if (pagina > totalPags) pagina = 1;
+  const slice = data.slice((pagina-1)*POR_PAG, pagina*POR_PAG);
+
+  if (!slice.length) {
+    document.getElementById('table-wrap').innerHTML = `
+      <div class="state-box">
+        <div class="state-icon">🔍</div>
+        <div class="state-title">Sin resultados</div>
+        <div>Probá con otro filtro o búsqueda.</div>
+      </div>`;
+    return;
+  }
+
+  const rows = slice.map(c => {
+    const est = estado(c.dias);
+    const pct = Math.min(100, Math.round(c.dias / 120 * 100));
+    const fecha = c.ultima.split('-').reverse().join('/');
+    const montoFmt = c.monto ? '$' + Math.round(c.monto).toLocaleString('es-AR') : '—';
+    const freqTxt = c.freq ? `cada ${c.freq}d` : '1 op.';
+    return `<tr>
+      <td>
+        <div class="client-name">${c.nombre}</div>
+        <div class="client-ops">${c.ops} operacion${c.ops!==1?'es':''} · última: ${fecha}</div>
+      </td>
+      <td>
+        <div class="days-cell">
+          <span class="days-num" style="color:${barColor(est.cls)}">${c.dias}d</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${barColor(est.cls)}"></div></div>
+        </div>
+      </td>
+      <td><span class="badge ${est.cls}"><span class="badge-dot"></span>${est.label}</span></td>
+      <td><span class="freq-tag">${freqTxt}</span></td>
+      <td class="monto">${montoFmt}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('table-wrap').innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Días sin operar</th>
+          <th>Estado</th>
+          <th>Frecuencia</th>
+          <th>Último monto</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="pagination">
+      <span>${total} clientes · pág. ${pagina} de ${totalPags}</span>
+      <div class="page-btns">
+        <button class="page-btn" onclick="irPag(${pagina-1})" ${pagina<=1?'disabled':''}>← Anterior</button>
+        <button class="page-btn" onclick="irPag(${pagina+1})" ${pagina>=totalPags?'disabled':''}>Siguiente →</button>
+      </div>
+    </div>`;
+}
+
+function setFiltro(f, el) {
+  filtro = f; pagina = 1;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active','g','a','r'));
+  el.classList.add('active');
+  if (f==='activo') el.classList.add('g');
+  if (f==='proximos') el.classList.add('a');
+  if (f==='inactivos') el.classList.add('r');
+  renderTabla();
+}
+
+function setBusqueda(v) { busqueda = v.toLowerCase(); pagina = 1; renderTabla(); }
+function setSort(v) { sortKey = v; pagina = 1; renderTabla(); }
+function irPag(n) { pagina = n; renderTabla(); window.scrollTo(0,0); }
+
+async function enviarConsulta() {
+  const input = document.getElementById('ai-input');
+  const texto = input.value.trim();
+  if (!texto || !todosClientes.length) return;
+
+  const btn = document.getElementById('ai-send-btn');
+  btn.disabled = true;
+  btn.textContent = 'Analizando...';
+  document.getElementById('ai-response').classList.add('visible');
+  document.getElementById('ai-text').textContent = '...';
+
+  const resumen = todosClientes.slice(0,150).map(c =>
+    `${c.nombre}|${c.dias}d|${c.ops}ops|$${Math.round(c.monto)}|freq:${c.freq||'?'}d`
+  ).join('\n');
+
+  const activos = todosClientes.filter(c=>c.dias<=DIAS_ACTIVO).length;
+  const proximos = todosClientes.filter(c=>c.dias>DIAS_ACTIVO&&c.dias<=DIAS_PROXIMO).length;
+  const inactivos = todosClientes.filter(c=>c.dias>DIAS_PROXIMO).length;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: `Sos un analista comercial experto de la empresa Infinity, una casa de cambio / fintech. 
+Tenés acceso a los datos de clientes en tiempo real. 
+Reglas: activo = operó en últimos 25 días, por operar = 26-40 días, inactivo = más de 40 días.
+Hoy es 24 de junio de 2026.
+Total: ${todosClientes.length} clientes. Activos: ${activos}. Por operar: ${proximos}. Inactivos: ${inactivos}.
+Respondé en español, de forma directa y accionable. Si pedís una lista, dala concreta con nombres reales.
+Datos de clientes (nombre|días_sin_operar|ops_totales|último_monto|frecuencia_promedio):
+${resumen}`,
+        messages: [{ role: 'user', content: texto }]
+      })
+    });
+    const json = await res.json();
+    const respuesta = json.content?.[0]?.text || 'No se pudo obtener respuesta.';
+    document.getElementById('ai-text').textContent = respuesta;
+  } catch(e) {
+    document.getElementById('ai-text').textContent = 'Error al consultar la IA. Revisá la conexión.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Preguntar IA ✦';
+    input.value = '';
+  }
+}
+
+// Iniciar
+cargarDatos();
+</script>
+</body>
+</html>
