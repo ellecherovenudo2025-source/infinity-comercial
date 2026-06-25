@@ -400,10 +400,7 @@ async function fetchMondayBoard() {
             subitems {
               id name
               column_values(ids: ["board_relation_mm2n98gy","date_mm2ndb","numeric_mm2nq09b"]) {
-                id
-                ... on BoardRelationValue { linked_items { name } }
-                ... on DateValue { date }
-                ... on NumbersValue { number }
+                id text value
               }
             }
           }
@@ -412,9 +409,13 @@ async function fetchMondayBoard() {
     }
   `;
 
-  const res = await fetch('https://api.monday.com/v1/', {
+  const res = await fetch('https://api.monday.com/v2', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY3NTQwNDMyOSwiYWFpIjoxMSwidWlkIjo5NjczNTQ1NiwiaWFkIjoiMjAyNi0wNi0yNVQxNToyMToxNi45NDlaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjgwOTE5MTQsInJnbiI6InVzZTEifQ.E0vWLCuXQ27BCnTt3FB2r8115kPowANUgefy0cY3MxY',
+      'API-Version': '2024-01'
+    },
     body: JSON.stringify({ query })
   });
 
@@ -434,11 +435,11 @@ function procesarClientes(data) {
       for (const sub of item.subitems || []) {
         let cliente = null, fecha = null, monto = 0;
         for (const col of sub.column_values || []) {
-          if (col.id === 'board_relation_mm2n98gy' && col.linked_items?.length) {
-            cliente = col.linked_items[0].name.replace(/ \((IF|FI)\)/gi,'').trim();
+          if (col.id === 'board_relation_mm2n98gy' && col.text) {
+            cliente = col.text.replace(/ \((IF|FI)\)/gi,'').trim();
           }
-          if (col.id === 'date_mm2ndb' && col.date) fecha = col.date;
-          if (col.id === 'numeric_mm2nq09b' && col.number) monto = col.number;
+          if (col.id === 'date_mm2ndb' && col.text) fecha = col.text;
+          if (col.id === 'numeric_mm2nq09b' && col.text) monto = parseFloat(col.text) || 0;
         }
         if (!cliente || !fecha) continue;
         if (!ops[cliente]) ops[cliente] = [];
