@@ -391,16 +391,22 @@ async function cargarDatos() {
 }
 
 async function fetchMondayBoard() {
+  const TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY3NTQwNDMyOSwiYWFpIjoxMSwidWlkIjo5NjczNTQ1NiwiaWFkIjoiMjAyNi0wNi0yNVQxNToyMToxNi45NDlaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjgwOTE5MTQsInJnbiI6InVzZTEifQ.E0vWLCuXQ27BCnTt3FB2r8115kPowANUgefy0cY3MxY';
+
   const query = `
-    query {
+    query GetBoard {
       boards(ids: [${BOARD_ID}]) {
         items_page(limit: 500) {
           items {
-            id name
+            id
+            name
             subitems {
-              id name
-              column_values(ids: ["board_relation_mm2n98gy","date_mm2ndb","numeric_mm2nq09b"]) {
-                id text value
+              id
+              name
+              column_values {
+                id
+                text
+                value
               }
             }
           }
@@ -409,22 +415,43 @@ async function fetchMondayBoard() {
     }
   `;
 
-  const TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY3NTQwNDMyOSwiYWFpIjoxMSwidWlkIjo5NjczNTQ1NiwiaWFkIjoiMjAyNi0wNi0yNVQxNToyMToxNi45NDlaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6MjgwOTE5MTQsInJnbiI6InVzZTEifQ.E0vWLCuXQ27BCnTt3FB2r8115kPowANUgefy0cY3MxY';
-  const PROXY = 'https://corsproxy.io/?' + encodeURIComponent('https://api.monday.com/v2');
-  const res = await fetch(PROXY, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': TOKEN,
-      'API-Version': '2024-01'
-    },
-    body: JSON.stringify({ query })
-  });
+  const proxies = [
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.monday.com/v2'),
+    'https://corsproxy.io/?' + encodeURIComponent('https://api.monday.com/v2'),
+    'https://thingproxy.freeboard.io/fetch/https://api.monday.com/v2'
+  ];
 
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const json = await res.json();
-  if (json.errors) throw new Error(json.errors[0].message);
-  return json;
+  let lastError = null;
+
+  for (const proxyUrl of proxies) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+      const res = await fetch(proxyUrl, {
+        signal: controller.signal,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': TOKEN,
+          'API-Version': '2024-01'
+        },
+        body: JSON.stringify({ query })
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) { lastError = new Error(`HTTP ${res.status}`); continue; }
+      const json = await res.json();
+      if (json.errors) { lastError = new Error(json.errors[0].message); continue; }
+      if (!json.data) { lastError = new Error('Respuesta sin datos'); continue; }
+      return json;
+    } catch (err) {
+      lastError = err;
+      continue;
+    }
+  }
+
+  throw lastError || new Error('No se pudo conectar con monday.com (todos los proxies fallaron)');
 }
 
 function procesarClientes(data) {
@@ -437,11 +464,27 @@ function procesarClientes(data) {
       for (const sub of item.subitems || []) {
         let cliente = null, fecha = null, monto = 0;
         for (const col of sub.column_values || []) {
+          // cliente: columna de relacion con nombre
           if (col.id === 'board_relation_mm2n98gy' && col.text) {
-            cliente = col.text.replace(/ \((IF|FI)\)/gi,'').trim();
+            cliente = col.text.replace(/ \((IF|FI)\)/gi, '').trim();
           }
-          if (col.id === 'date_mm2ndb' && col.text) fecha = col.text;
-          if (col.id === 'numeric_mm2nq09b' && col.text) monto = parseFloat(col.text) || 0;
+          // fecha: columna de fecha
+          if (col.id === 'date_mm2ndb' && col.text) {
+            // text puede ser "2026-06-23" o "23/06/2026"
+            const t = col.text;
+            if (t.match(/^\d{4}-\d{2}-\d{2}/)) fecha = t.substring(0,10);
+            else if (t.match(/^\d{2}\/\d{2}\/\d{4}/)) {
+              const p = t.split('/'); fecha = p[2]+'-'+p[1]+'-'+p[0];
+            } else fecha = t;
+          }
+          // monto
+          if (col.id === 'numeric_mm2nq09b' && col.text) {
+            monto = parseFloat(col.text.replace(/[^0-9.-]/g,'')) || 0;
+          }
+        }
+        // fallback: si no encontro cliente por id, intentar por nombre del subelemento
+        if (!cliente && sub.name && !sub.name.match(/^\d{2}-\d{2}/)) {
+          cliente = sub.name.replace(/ \((IF|FI)\)/gi, '').trim();
         }
         if (!cliente || !fecha) continue;
         if (!ops[cliente]) ops[cliente] = [];
